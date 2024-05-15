@@ -11,7 +11,7 @@ class MainWindow():
         #app建てる
         app = pg.mkQApp("test")
         #uiファイル読み込み
-        win=uic.loadUi("test.ui")
+        win=uic.loadUi("gui.ui")
         #ウィンドウの設定
         win.resize(1200,700)
         win.setWindowTitle('pyqtgraph example: Plotting')
