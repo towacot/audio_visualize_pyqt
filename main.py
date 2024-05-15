@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
-from audio_input import AudioInput
-from spectrogram import Spectrogram
-from gui import MainWindow
+from src.audio_input import AudioInput
+from src.spectrogram import Spectrogram
+from src.gui import MainWindow
 
 # PyAudioストリーム入力取得クラス
 input = AudioInput(chunk=1024) #, input_device_keyword="Real")
