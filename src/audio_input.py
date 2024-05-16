@@ -28,11 +28,11 @@ class AudioInput:
                                      input_device_index=self.use_device_index)
         return self
 
-    def run(self,indicater):
+    def run(self,callback,indicater):
         while self.stream.is_active():
             input_buff = self.stream.read(self.chunk)
             data = np.frombuffer(input_buff, dtype=self.dtype)
-            # callback(data)
+            callback(data)
             indicater(data)
         self.__terminate()
         

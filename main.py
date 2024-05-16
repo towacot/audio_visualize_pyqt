@@ -5,8 +5,8 @@ from src.gui import MainWindow
 
 # PyAudioストリーム入力取得クラス
 input = AudioInput(chunk=1024) #, input_device_keyword="Real")
-# メルスペクトログラム用クラス
-# melspectrogram = Spectrogram( input.RATE, (input.CHANNELS, input.CHUNK) )
+# スペクトログラム用クラス
+# spectrogram = Spectrogram( input.RATE, (input.CHANNELS, input.CHUNK) )
 # GUI用クラス
 Main = MainWindow()
 

@@ -113,6 +113,7 @@ class MainWindow():
         self.volume_write=True
     def get_sp_data(self,ary):
         pass
+
     def update(self):
         self.indicater_ui(self.volume)
         if self.playstate:
