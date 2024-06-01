@@ -5,7 +5,12 @@ import pyaudio as pa
 import sys
 
 class AudioInput:
-    def __init__(self,format=pa.paInt16, chunk=512, sample_rate=44100, channels=1, use_device_index=7):
+    def __init__(self,format=pa.paFloat32, 
+                 chunk=512, 
+                 sample_rate=44100, 
+                 channels=1, 
+                 use_device_index=7):
+        
         self.chunk = chunk
         self.format = format
         self.sample_rate = sample_rate
@@ -32,8 +37,10 @@ class AudioInput:
         while self.stream.is_active():
             input_buff = self.stream.read(self.chunk)
             data = np.frombuffer(input_buff, dtype=self.dtype)
+            # print("input")
+            # print(data)
             callback(data)
-            indicater(data)
+            #indicater(data)
         self.__terminate()
         
     def __terminate(self):

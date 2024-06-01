@@ -2,12 +2,15 @@ from pyqtgraph.Qt import QtCore, QtGui
 import numpy as np
 import pyqtgraph as pg
 import sys
+import queue
+import time
 from PyQt5 import uic
 from PyQt5.QtWidgets import QProgressBar
-
-
+from colour import Color
+from matplotlib import cm
 class MainWindow():
-    def __init__(self,chunk,):
+
+    def __init__(self,params,Playstate,spectrogram_queue):
         #app建てる
         app = pg.mkQApp("test")
         #uiファイル読み込み
@@ -27,32 +30,43 @@ class MainWindow():
         win.show()
         #--------------------------------------------------------------------------------
         #テスト用配列データ
-        self.testsp=np.full((1,5000),200)
+        self.testsp=np.full((1,1025),-80,dtype=np.float32)
 
         #グラフ描画領域の処理
         ##imageItemの初期化
         imageitem = pg.ImageItem(self.testsp)
+        # カラーマップの設定
+        colormap = cm.get_cmap("inferno")  # cm.get_cmap("CMRmap")
+        colormap._init()
+        lut = (colormap._lut * 255).view(np.ndarray)
+        imageitem.setLookupTable(lut)
+        imageitem.setLevels([-80, 0])
 
         ##viewboxの初期化
         viewbox=win.graphicsView.addViewBox()
         viewbox.addItem(imageitem)
         ##axisitem の初期化　仮
+        self.time_axis = np.arange(self.testsp.shape[0]) * params["step"] / params["sample_rate"]
         axis_left = pg.AxisItem(orientation="left")
+        axis_bottom = pg.AxisItem(orientation="bottom")
+        axis_bottom.setLabel('Time (s)')
         n_ygrid = 5
         yticks = {}
         for i in range(n_ygrid):
             yticks[i * (1 / (n_ygrid - 1))] = str(i)
         axis_left.setTicks([yticks.items()])
+        plotitem = pg.PlotItem(viewBox=viewbox, axisItems={"left": axis_left, "bottom": axis_bottom})
+       
         
         ##plotitemの初期化
-        plotitem = pg.PlotItem(viewBox=viewbox, axisItems={"left":axis_left})
-
+        plotitem = pg.PlotItem(viewBox=viewbox, axisItems={"left":axis_left},)
+        
         ##graphicsViewにplotItemをセット
         win.graphicsView.setCentralItem(plotitem)
         #--------------------------------------------------------------------------------
         #状態管理
-        self.playstate=False
-        self.volume_write=True
+        self.playstate=Playstate
+        self.volume_write=False
         
         #ui構成要素
         self.app=app
@@ -66,11 +80,13 @@ class MainWindow():
         self.volumebar = win.findChild(QProgressBar, 'volumeBar')
         ##スペクトログラム用データ 仮
         self.sp_ary = np.zeros((1, 5000))
-        self.dt=chunk
+        self.dt=params["step"]/params["sample_rate"]
+        self.step_width=params["step"]
         ##その他データ
         self.data = 0
         self.ptr = 0
         self.t = [0]
+        self.sample_rate = params["sample_rate"]
 
         #入力フォーマット確認
         self.positive_threshold = (1 << 15) - 1
@@ -79,12 +95,23 @@ class MainWindow():
         #スタイルシート適用
         self.setCustomStyle()
 
+        # スペクトログラムチャンクを保存するキュー
+        self.spectrogram_queue = spectrogram_queue
+        self.blank_positions = []  # 空白部分の位置を記憶するリスト
+
+        self.current_time_line = pg.InfiniteLine(angle=90, movable=False, pen='r')
+        plotitem.addItem(self.current_time_line)
+        self.plotitem = plotitem
+        self.start_time = time.time()
+
+
     def playClicked(self):
         print("play")
-        self.playstate=True
+        self.playstate.put(1)
     def pauseClicked(self):
         print("pause")
-        self.playstate=False
+        #キューを空にする
+        self.playstate.get()
     def resetClicked(self):
         print("reset")
         print("reset")
@@ -96,7 +123,8 @@ class MainWindow():
         self.imageitem.setImage(self.testsp)
 
     def indicater(self,data):
-        if self.volume_write:
+        if not self.volume_write:
+            self.volume_write=True
             self.volume[:]=data
             self.volume_write=False
         else:
@@ -106,30 +134,29 @@ class MainWindow():
       # ルート平均二乗 (RMS) を計算する
         if self.volume_write:
             return
+        self.volume_write=True
         volume /= np.where(volume > 0, self.positive_threshold, self.negative_threshold)
         rms = np.sqrt(np.mean(volume**2))
         result = int(rms*100)
         self.volumebar.setValue(result)
-        self.volume_write=True
-    def get_sp_data(self,ary):
-        pass
+        self.volume_write=False
 
     def update(self):
-        self.indicater_ui(self.volume)
-        if self.playstate:
-            self.testsp=np.block([[self.testsp],[np.full((1,5000),self.data)]])
-            self.imageitem.setImage(self.testsp) 
-            self.data=(self.data + 1) % 250  # データを増加させ、10で割った余りを取ることで0〜9の範囲にする
-            
-            #     sp_graph.enableAutoRange('xy', False)  # 初めのデータセットをプロットした後に自動スケーリングを停止
-            self.ptr += 1
-        else:
-            pass
+        if not self.playstate.empty():
+            while not self.spectrogram_queue.empty():
+                ary = self.spectrogram_queue.get()
+                self.testsp = np.vstack((self.testsp, ary))
+                max_rows = 500
+                if self.testsp.shape[0] > max_rows:
+                    self.testsp = self.testsp[-max_rows:]
+                self.imageitem.setImage(self.testsp, autoLevels=False)
+
 
     def run(self):
         timer = QtCore.QTimer()
         timer.timeout.connect(self.update)
         timer.start(50)
+        self.start_time = time.time()
         self.app.exec_()
 
     def setCustomStyle(self):
