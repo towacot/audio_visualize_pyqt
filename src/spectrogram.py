@@ -3,7 +3,7 @@ import time
 import numpy as np
 import librosa
 import threading
-
+from concurrent.futures import ProcessPoolExecutor, ThreadPoolExecutor
 
 class Spectrogram:
     def __init__(self,
@@ -41,6 +41,7 @@ class Spectrogram:
         self.window    = np.hamming(self.n_chunk)
         self.fft       = np.fft.rfft
         self.maxvolume = 1.0
+        self.executor = ThreadPoolExecutor(max_workers=4)
         
     def set_readable_true(self):
         #データが読める状態にする
@@ -79,25 +80,38 @@ class Spectrogram:
             self.data_is_not_enough = False
         #--------------------------------
         self.set_readable_true()#データ読み終わったよ！
-
+    def calc_spectrogram(self, data):
+        windowed_data = data * self.window
+        specs = np.abs(np.fft.rfft(windowed_data))**2
+        return specs
     def calc(self):
         self.callback()
         #得られたtotal_dataから指定された範囲のデータを取得
         self.get_process_data()
+        start=time.time()
         #データが不足している場合は何もしない
         if self.data_is_not_enough:
             return
         else:
-            # self.specs[:]=np.sqrt(np.abs(self.fft(self.window * self.process_data)))
-            self.process_data = self.process_data * self.window
-            specs = np.abs(np.fft.rfft(self.process_data))**2
+            # # self.specs[:]=np.sqrt(np.abs(self.fft(self.window * self.process_data)))
+            # self.process_data = self.process_data * self.window
+            # specs = np.abs(np.fft.rfft(self.process_data))**2
+            # if np.max(specs) > self.maxvolume:
+            #     self.maxvolume = np.max(specs)
+            # specs = librosa.power_to_db(specs, ref=self.maxvolume)
+            # #print(specs)
+            # self.spectrogramqueue.append(specs)
+            # #スペクトログラムをGUIに渡す
+            # 並列でスペクトログラムを計算
+            future = self.executor.submit(self.calc_spectrogram, self.process_data)
+            specs = future.result()  # 計算結果を取得
             if np.max(specs) > self.maxvolume:
                 self.maxvolume = np.max(specs)
             specs = librosa.power_to_db(specs, ref=self.maxvolume)
-            #print(specs)
             self.spectrogramqueue.append(specs)
-            #スペクトログラムをGUIに渡す
-            
+        finish=time.time()
+        sys.stdout.write("\rcalc time : {}".format(finish-start ))
+        sys.stdout.flush()
     
     def run(self):
         while True:

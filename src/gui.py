@@ -106,15 +106,15 @@ class MainWindow():
 
 
     def playClicked(self):
-        print("play")
+        #print("play")
         self.playstate.put(1)
     def pauseClicked(self):
-        print("pause")
+       # print("pause")
         #キューを空にする
         self.playstate.get()
     def resetClicked(self):
-        print("reset")
-        print("reset")
+       # print("reset")
+        #print("reset")
         self.playstate = False
         self.ptr = 0
         self.data = 0

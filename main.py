@@ -7,7 +7,7 @@ import threading
 # パラメタ設定
 params = {
     "chunk": 2048,
-    "step": 1200,
+    "step": 1024,
     "sample_rate": 44100,
 }
 

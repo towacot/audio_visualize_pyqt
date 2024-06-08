@@ -6,7 +6,7 @@ import sys
 
 class AudioInput:
     def __init__(self,format=pa.paFloat32, 
-                 chunk=512, 
+                 chunk=128, 
                  sample_rate=44100, 
                  channels=2, 
                  use_device_index=15,
