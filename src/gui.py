@@ -30,7 +30,7 @@ class MainWindow():
         win.show()
         #--------------------------------------------------------------------------------
         #テスト用配列データ
-        self.testsp=np.full((1,1025),-80,dtype=np.float32)
+        self.testsp=np.full((1,1025),-80,dtype=np.float64)
 
         #グラフ描画領域の処理
         ##imageItemの初期化
@@ -40,7 +40,7 @@ class MainWindow():
         colormap._init()
         lut = (colormap._lut * 255).view(np.ndarray)
         imageitem.setLookupTable(lut)
-        imageitem.setLevels([-80, 0])
+        imageitem.setLevels([-60, 0])
 
         ##viewboxの初期化
         viewbox=win.graphicsView.addViewBox()
@@ -50,10 +50,10 @@ class MainWindow():
         axis_left = pg.AxisItem(orientation="left")
         axis_bottom = pg.AxisItem(orientation="bottom")
         axis_bottom.setLabel('Time (s)')
-        n_ygrid = 5
+        n_ygrid = 6000
         yticks = {}
         for i in range(n_ygrid):
-            yticks[i * (1 / (n_ygrid - 1))] = str(i)
+            yticks[i] = str(i)
         axis_left.setTicks([yticks.items()])
         plotitem = pg.PlotItem(viewBox=viewbox, axisItems={"left": axis_left, "bottom": axis_bottom})
        
@@ -145,17 +145,18 @@ class MainWindow():
         if not self.playstate.empty():
             while not self.spectrogram_queue.empty():
                 ary = self.spectrogram_queue.get()
+                ary =np.array(ary, dtype=np.float64)
                 self.testsp = np.vstack((self.testsp, ary))
-                max_rows = 500
+                max_rows = 250
                 if self.testsp.shape[0] > max_rows:
                     self.testsp = self.testsp[-max_rows:]
-                self.imageitem.setImage(self.testsp, autoLevels=False)
+            self.imageitem.setImage(self.testsp, autoLevels=False)
 
 
     def run(self):
         timer = QtCore.QTimer()
         timer.timeout.connect(self.update)
-        timer.start(50)
+        timer.start(1)
         self.start_time = time.time()
         self.app.exec_()
 
