@@ -2,6 +2,7 @@ from src.audio_input import AudioInput
 from src.spectrogram import Spectrogram
 from src.gui import MainWindow
 import queue
+from collections import deque
 import threading
 # パラメタ設定
 params = {
@@ -10,9 +11,9 @@ params = {
     "sample_rate": 44100,
 }
 
-Playstate=queue.Queue()#空なら停止、満杯なら再生
-InputDataQueue = queue.Queue()
-SpectrogramQueue = queue.Queue()
+Playstate=queue.Queue(maxsize=1)#空なら停止、満杯なら再生
+InputDataQueue = deque()
+SpectrogramQueue = deque()
 # PyAudioストリーム入力取得クラス
 input = AudioInput(chunk=1024,InputDataQueue=InputDataQueue)
 # スペクトログラム用クラス

@@ -95,7 +95,7 @@ class Spectrogram:
                 self.maxvolume = np.max(specs)
             specs = librosa.power_to_db(specs, ref=self.maxvolume)
             #print(specs)
-            self.spectrogramqueue.put(specs)
+            self.spectrogramqueue.append(specs)
             #スペクトログラムをGUIに渡す
             
     
@@ -110,7 +110,9 @@ class Spectrogram:
 
     def callback(self):
         #データを追加
-        buffer = self.inputdataqueue.get()
+        if len(self.inputdataqueue) == 0:
+            return
+        buffer = self.inputdataqueue.popleft()
         self.total_data = np.append(self.total_data, buffer)
 
         

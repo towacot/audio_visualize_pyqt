@@ -143,8 +143,8 @@ class MainWindow():
 
     def update(self):
         if not self.playstate.empty():
-            while not self.spectrogram_queue.empty():
-                ary = self.spectrogram_queue.get()
+            while not len(self.spectrogram_queue) == 0:
+                ary = self.spectrogram_queue.popleft()
                 ary =np.array(ary, dtype=np.float64)
                 self.testsp = np.vstack((self.testsp, ary))
                 max_rows = 250

@@ -42,7 +42,7 @@ class AudioInput:
             data = np.reshape(data, (self.chunk, self.channels)).T
             # print("input")
             # print(data)
-            self.InputDataQueue.put(data)
+            self.InputDataQueue.append(data)
             #indicater(data)
         self.__terminate()
     def test(self):
