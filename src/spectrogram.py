@@ -7,11 +7,12 @@ from concurrent.futures import ProcessPoolExecutor, ThreadPoolExecutor
 
 class Spectrogram:
     def __init__(self,
-                params,Playstate,SpectrogramQueue,InputDataQueue
+                params,Playstate,SpectrogramQueue,InputDataQueue,paramsqueue
             ):
         # スペクトログラム算出用パラメタ
         self.n_chunk   = params["chunk"]
         self.step_width = params["step"]
+        self.paramsqueue=paramsqueue
         ##一つのスペクトルに対して、描画時間幅は中心時刻から前後に
         ##step_width/2
         self.n_freqs   = self.n_chunk // 2 + 1
@@ -28,7 +29,6 @@ class Spectrogram:
         #処理データ
         self.process_data = np.zeros(self.n_chunk)
         self.index_of_initial = 0
-        self.testo=0
         #保存データ
         self.spectrogramqueue = SpectrogramQueue
         self.inputdataqueue = InputDataQueue
@@ -102,25 +102,42 @@ class Spectrogram:
             # #print(specs)
             # self.spectrogramqueue.append(specs)
             # #スペクトログラムをGUIに渡す
+        
             # 並列でスペクトログラムを計算
             future = self.executor.submit(self.calc_spectrogram, self.process_data)
             specs = future.result()  # 計算結果を取得
             if np.max(specs) > self.maxvolume:
                 self.maxvolume = np.max(specs)
-            specs = librosa.power_to_db(specs, ref=self.maxvolume)
+            
+            specs = librosa.power_to_db(specs, ref=100000)
             self.spectrogramqueue.append(specs)
         finish=time.time()
-        sys.stdout.write("\rcalc time : {}".format(finish-start ))
-        sys.stdout.flush()
-    
+        # sys.stdout.write("\rcalc time : {}".format(finish-start ))
+        # sys.stdout.flush()
+    def resetparams(self):
+        new_params = self.paramsqueue.get()
+        self.n_chunk   = new_params["chunk"]
+        self.step_width = new_params["step"]
+        self.n_freqs   = self.n_chunk // 2 + 1
+        self.specs     = np.zeros((self.n_freqs))
+        self.window    = np.hamming(self.n_chunk)
+        self.total_data = np.array([],dtype=np.float32)
+        self.index_of_initial = 0
+        
+
     def run(self):
+        activated=0
         while True:
             if not self.playstate.empty():
+                if activated==0:
+                    activated=1
+                    self.resetparams()
                 #print("calc run")
                 #print(self.testo)
                 self.calc()
             else:
                 time.sleep(0.01)
+                activated=0
 
     def callback(self):
         #データを追加
