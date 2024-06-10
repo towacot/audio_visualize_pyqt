@@ -105,12 +105,12 @@
            <item row="1" column="0">
             <widget class="QLabel" name="label">
              <property name="text">
-              <string>parra1</string>
+              <string>窓幅</string>
              </property>
             </widget>
            </item>
            <item row="1" column="1">
-            <widget class="QComboBox" name="comboBox"/>
+            <widget class="QComboBox" name="chunkbox"/>
            </item>
            <item row="1" column="2">
             <widget class="QLabel" name="label_3">
@@ -120,7 +120,7 @@
             </widget>
            </item>
            <item row="2" column="1">
-            <widget class="QComboBox" name="comboBox_2"/>
+            <widget class="QComboBox" name="stepbox"/>
            </item>
            <item row="2" column="2">
             <widget class="QLabel" name="label_4">
@@ -132,7 +132,7 @@
            <item row="2" column="0">
             <widget class="QLabel" name="label_2">
              <property name="text">
-              <string>TextLabel</string>
+              <string>移動幅</string>
              </property>
             </widget>
            </item>
@@ -143,6 +143,16 @@
             <widget class="QComboBox" name="comboBox_4"/>
            </item>
           </layout>
+         </widget>
+         <widget class="QDial" name="dial">
+          <property name="geometry">
+           <rect>
+            <x>750</x>
+            <y>0</y>
+            <width>111</width>
+            <height>101</height>
+           </rect>
+          </property>
          </widget>
         </widget>
         <widget class="QWidget" name="tab_2">

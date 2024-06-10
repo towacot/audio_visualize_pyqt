@@ -6,7 +6,7 @@ import sys
 
 class AudioInput:
     def __init__(self,format=pa.paFloat32, 
-                 chunk=512, 
+                 chunk=128, 
                  sample_rate=44100, 
                  channels=2, 
                  use_device_index=15,
@@ -42,18 +42,10 @@ class AudioInput:
             data = np.reshape(data, (self.chunk, self.channels)).T
             # print("input")
             # print(data)
-            self.InputDataQueue.put(data)
-            #indicater(data)
+            self.InputDataQueue.append(data[1])
+            # indicater(data[1])
         self.__terminate()
-    def test(self):
-        while self.stream.is_active():
-            input_buff = self.stream.read(self.chunk)
-            data = np.frombuffer(input_buff, dtype=self.dtype)
-            print("input")
-            print(data)
-            self.InputDataQueue.put(data)
-            #indicater(data)
-        self.__terminate()
+    
   
     def __terminate(self):
         self.stream.stop_stream()
