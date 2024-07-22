@@ -19,8 +19,6 @@ class MainWindow():
         #ウィンドウの設定
         win.resize(1200,700)
         win.setWindowTitle('リアルタイムスペクトログラム')
-    
-        
         #グラフに必要な設定
         pg.setConfigOptions(antialias=True)
         #--------------------------------------------------------------------------------
@@ -29,12 +27,12 @@ class MainWindow():
         win.pauseButton.clicked.connect(self.pauseClicked)
         win.resetButton.clicked.connect(self.resetClicked)
 
-        chunkselecter = win.chunkbox
-        stepselecter = win.stepbox
-        chunkselecter.addItems(["1024","2048","4096","8192"])
-        stepselecter.addItems(["1/4","1/2","3/4","1"])
-        chunkselecter.setCurrentIndex(1)
-        stepselecter.setCurrentIndex(2)
+        self.chunkselecter = win.chunkbox
+        self.stepselecter = win.stepbox
+        self.chunkselecter.addItems(["1024","2048","4096","8192"])
+        self.stepselecter.addItems(["1/4","1/2","3/4","1"])
+        self.chunkselecter.setCurrentIndex(1)
+        self.stepselecter.setCurrentIndex(2)
         win.show()
         #--------------------------------------------------------------------------------
         #スペクトログラム格納用配列
@@ -44,11 +42,13 @@ class MainWindow():
         self.chunk=params["chunk"]
         self.sample_rate=params["sample_rate"]
         self.fleqs=self.chunk//2+1
+        #--------------------------------------------------------------------------------
         #グラフ描画領域の処理
         ##imageItemの初期化
         imageitem = pg.ImageItem(self.SPECTROGRM)
-        # カラーマップの設定
-        colormap = cm.get_cmap("inferno")  
+
+        ##カラーマップの設定
+        colormap = cm.get_cmap("jet")  
         colormap._init()
         lut = (colormap._lut * 255).view(np.ndarray)
         imageitem.setLookupTable(lut)
@@ -57,11 +57,12 @@ class MainWindow():
         ##viewboxの初期化
         viewbox=win.graphicsView.addViewBox()
         viewbox.addItem(imageitem)
+
         ##axisitem の初期化　仮
-        self.time_axis = np.arange(self.SPECTROGRM.shape[0]) * params["step"] / params["sample_rate"]
         axis_left = pg.AxisItem(orientation="left")
         axis_bottom = pg.AxisItem(orientation="bottom")
         axis_bottom.setLabel('Time ')
+
         #縦軸の設定
         n_ygrid = 10
         yticks = {}
@@ -69,11 +70,9 @@ class MainWindow():
             index=int(self.fleqs*i/n_ygrid)
             yticks[index] = str(int(index*params["sample_rate"]/self.fleqs)) + "Hz"
         axis_left.setTicks([yticks.items()])
+
+        #plotitemの初期化
         plotitem = pg.PlotItem(viewBox=viewbox, axisItems={"left": axis_left, "bottom": axis_bottom})
-        
-        
-        ##plotitemの初期化
-        # plotitem = pg.PlotItem(viewBox=viewbox, axisItems={"left":axis_left},)
         
         ##graphicsViewにplotItemをセット
         win.graphicsView.setCentralItem(plotitem)
@@ -89,24 +88,21 @@ class MainWindow():
         self.viewbox=viewbox
         self.plotitem=plotitem
 
-        #入力データ管理
+        #ヴォリュームデータ管理
         self.volume=np.zeros(256)
         self.volumebar = win.findChild(QProgressBar, 'volumeBar')
         
         ##パラメタ共有用のキュー
         self.paramsqueue=paramsqueue
-        ##その他データ
-        self.t = [0]
-        self.sample_rate = params["sample_rate"]
 
-        #入力フォーマット確認
+        #音量の範囲
         self.positive_threshold = (1 << 15) - 1
         self.negative_threshold = 1 << 15
 
         #スタイルシート適用
         self.setCustomStyle()
 
-        # スペクトログラムチャンクを保存するキュー
+        #計算済みデータを保存するキュー
         self.spectrogram_queue = spectrogram_queue
 
     def setaxis(self):
@@ -129,8 +125,8 @@ class MainWindow():
         #現在のパラメタをクリア
         self.spectrogram_queue.clear()
         #コンボボックスからパラメータを取得
-        self.chunk = int(self.win.chunkbox.currentText())
-        stepindex = int(self.win.stepbox.currentIndex())+1
+        self.chunk = int(self.chunkselecter.currentText())
+        stepindex = int(self.stepselecter.currentIndex())+1
         self.step_width = (self.chunk*stepindex)//4
         self.fleqs=self.chunk//2+1
         #グラフの軸を調整
@@ -154,8 +150,6 @@ class MainWindow():
         #キューを空にする
         self.playstate.get()
     def resetClicked(self):
-       # print("reset")
-        #print("reset")
         pass
        
 
@@ -167,7 +161,6 @@ class MainWindow():
             self.volume_write=False
         else:
             pass
-       
     def indicater_ui(self, volume):
       # ルート平均二乗 (RMS) を計算する
         if self.volume_write:
@@ -201,7 +194,7 @@ class MainWindow():
     def run(self):
         timer = QtCore.QTimer()
         timer.timeout.connect(self.update)
-        timer.start(1)
+        timer.start(1)#ms
         self.start_time = time.time()
         self.app.exec_()
 

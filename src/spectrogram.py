@@ -103,7 +103,7 @@ class Spectrogram:
             # self.spectrogramqueue.append(specs)
             # #スペクトログラムをGUIに渡す
         
-            # 並列でスペクトログラムを計算
+            # 並列でスペクトログラムを計算 GPT 効果不明
             future = self.executor.submit(self.calc_spectrogram, self.process_data)
             specs = future.result()  # 計算結果を取得
             if np.max(specs) > self.maxvolume:
@@ -112,8 +112,8 @@ class Spectrogram:
             specs = librosa.power_to_db(specs, ref=100000)
             self.spectrogramqueue.append(specs)
         finish=time.time()
-        # sys.stdout.write("\rcalc time : {}".format(finish-start ))
-        # sys.stdout.flush()
+        sys.stdout.write("\rcalc time : {}".format(finish-start ))
+        sys.stdout.flush()
     def resetparams(self):
         new_params = self.paramsqueue.get()
         self.n_chunk   = new_params["chunk"]
@@ -145,27 +145,3 @@ class Spectrogram:
             return
         buffer = self.inputdataqueue.popleft()
         self.total_data = np.append(self.total_data, buffer)
-
-        
-        # with self.reading_condition:
-        #     if self.readable==False:
-        #         #一時的にデータを保管して、reading=Falseになったらtotal_dataに追加
-        #         self.temp_data = np.append(self.temp_data, buffer)
-        #         self.temp_is_full = True
-        #         self.testo=2
-        #     else:
-        #         #total_dataにデータを追加
-        #         self.set_now_reading()#データ読んでるから今は読めないよ！
-        #         #---------------------------
-        #         if self.temp_is_full:
-        #             #一時的に保管していたデータをtotal_dataに追加
-        #             self.total_data = np.append(self.total_data, self.temp_data)
-        #             #一時的なデータを削除
-        #             self.temp_data = np.array([])
-        #             self.temp_is_full = False
-        #         #新しいデータを追加
-        #         self.total_data = np.append(self.total_data, buffer)
-        #         #---------------------------
-        #         # print("callback")
-        #         # print(buffer)
-        #         self.set_readable_true()#データ読み終わったよ！

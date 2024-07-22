@@ -15,14 +15,14 @@ paramsqueue = queue.Queue(maxsize=1)
 Playstate=queue.Queue(maxsize=1)#空なら停止、満杯なら再生
 InputDataQueue = deque()
 SpectrogramQueue = deque()
-# PyAudioストリーム入力取得クラス
+#入力取得クラス
 input = AudioInput(chunk=256,InputDataQueue=InputDataQueue)
-# スペクトログラム用クラス
+#スペクトログラム用クラス
 spectrogram = Spectrogram(params,Playstate,SpectrogramQueue,InputDataQueue,paramsqueue)
-# GUI用クラス
+#GUI用クラス
 Main = MainWindow(params,Playstate,SpectrogramQueue,paramsqueue)
 
-# 別スレッドで入力取得開始
+#入力・計算スレッド始動
 InputThread = threading.Thread(target=input.run, args=(Main.indicater,))
 CalcThread = threading.Thread(target=spectrogram.run, args=())
 InputThread.daemon=True
